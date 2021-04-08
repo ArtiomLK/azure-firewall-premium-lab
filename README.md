@@ -45,6 +45,17 @@ $vNetDefaultSubnetParams = @{
 }
 
 
+# Windows 10 Pro Virtual Machine parameters for testing purposes
+$vmTestParams = @{
+   Name = 'vmTestFwPremium'
+   Size = 'Standard_DS3_v2'
+   NICName = 'vmTestFwPremiumNIC'
+   PublisherName = 'MicrosoftWindowsDesktop'
+   Offer = 'Windows-10'
+   SKU = '19h2-pro'
+}
+
+
 #Public Ip parameters
 $FirewallPipParams = @{
    Name = "fw-pip-002"
@@ -88,6 +99,7 @@ echo $rgParams
 echo $vNetParams
 echo $vNetFirewallSubnetParams
 echo $vNetDefaultSubnetParams
+echo $vmTestParams
 echo $FirewallPipParams
 echo $firewallPremiumParams
 echo $keyVaultSettingsParams
@@ -132,14 +144,31 @@ echo $keyVault | Format-Table
    $vNet | Set-AzVirtualNetwork
    ```
 
-4. **Deploy a zone-redundant public IP**
+4. Create a Windows 10 Pro VM for testing purposes
+
+   ```PowerShell
+   # The NIC should be added to the subnet where VMs will be deployed (Not the AzureFirewallSubnet), you could double check with echo
+   echo $ $vNet.Subnets[1]
+   # Create a Network Interface Card
+   $NIC = New-AzNetworkInterface -Name $vmTestParams.NICName -ResourceGroupName $rgParams.Name -Location $rgParams.Location -SubnetId $vNet.Subnets[1].Id
+
+   $VirtualMachine = New-AzVMConfig -VMName $vmTestParams.Name -VMSize $vmTestParams.Size
+   $VirtualMachine = Set-AzVMOperatingSystem -VM $VirtualMachine -Windows -ComputerName $vmTestParams.Name -ProvisionVMAgent -EnableAutoUpdate # Provide a User and Password which later on will be used to login into the test VM
+   $VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id
+   $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName $vmTestParams.PublisherName -Offer $vmTestParams.Offer -Skus $vmTestParams.SKU -Version latest
+
+   # Create our test VM
+   New-AzVM -ResourceGroupName $rgParams.Name -Location $rgParams.Location -VM $VirtualMachine -Verbose
+   ```
+
+5. **Deploy a zone-redundant public IP**
 
    ```PowerShell
    # Deploy a zone-redundant public IP
    $firewallPip = New-AzPublicIpAddress @FirewallPipParams
    ```
 
-5. **Deploy Azure Firewall Premium**
+6. **Deploy Azure Firewall Premium**
 
    ```PowerShell
    # Gather PSVirtualNetwork and PSPublicIpAddress
@@ -160,14 +189,14 @@ echo $keyVault | Format-Table
    $firewallPremium = New-AzFirewall @firewallPremiumParams
    ```
 
-6. **Create an Azure Key Vault**
+7. **Create an Azure Key Vault**
 
    ```PowerShell
    # Create an Azure Key Vault
    $keyVault = New-AzKeyVault @keyVaultSettingsParams
    ```
 
-7. **Create a Managed Identity with access to our KeyVault**
+8. **Create a Managed Identity with access to our KeyVault**
 
    ```PowerShell
    # Get a reference to our Azure Key Vault
