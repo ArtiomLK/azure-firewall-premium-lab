@@ -247,6 +247,31 @@ echo $keyVault | Format-Table
    $keyVault | Set-AzKeyVaultAccessPolicy -objectId $objectId.Id -PermissionsToCertificates "Get","List" -PermissionsToSecrets "Get","List"
    ```
 
+10. **Create a self-signed certificate for TLS inspection**
+
+    ```PowerShell
+    # Run the following command if you get an error stating cert.ps1 is not digitally signed
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+    # Create our self Signed Certificates
+    cd .\scripts\ & .\cert.ps1 & cd ..
+    ```
+
+    > Note: After the certificates are created, deploy them to the following locations:
+    >
+    > - rootCA.crt - Deploy on endpoint machines (Public certificate only). (use any method u like, e.g. upload cert to storage account and create a sas url to download from endpoint machines)
+    > - interCA.pfx - Import as certificate on a Key Vault and assign to firewall policy.
+
+    ```PowerShell
+    # Get a reference to our Azure Key Vault
+    $keyVault = Get-AzKeyVault -VaultName $keyVaultSettingsParams.Name -ResourceGroupName $keyVaultSettingsParams.ResourceGroupName
+
+    # Create a Cert password for testing purposes, ( in real env this should not be in code)
+    $CertPassword = ConvertTo-SecureString -String "Password123!" -Force -AsPlainText
+    # Import the generated Certificate to Azure KeyVault (You are required to change the FilePath)
+    $tlsCert = $keyVault | Import-AzKeyVaultCertificate -Name 'intermediate-cert' -Password $CertPassword -FilePath "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx"
+    ```
+
 ### Additional Resources
 
 - [Configure Azure Firewall Premium features for WVD automated][1]
