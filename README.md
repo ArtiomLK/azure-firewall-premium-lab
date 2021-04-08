@@ -117,6 +117,14 @@ $managedIdentityParams = @{
    Location = $rgParams.Location
 }
 
+#Log Analytics Workspace Params
+$logParams = @{
+   Name = "FW-premium-Workspace-next"
+   ResourceGroupName = $rgParams.Name
+   Location = $rgParams.Location
+   Sku = "Standard"
+}
+
 
 # Test our created variables
 echo $rgParams
@@ -131,6 +139,7 @@ echo $bastionPipParams
 echo $firewallPremiumParams
 echo $keyVaultSettingsParams
 echo $managedIdentityParams
+echo $logParams
 
 
 # Gather required azure PSObjects used by PowerShell commands along the lab
@@ -270,6 +279,26 @@ echo $keyVault | Format-Table
     $CertPassword = ConvertTo-SecureString -String "Password123!" -Force -AsPlainText
     # Import the generated Certificate to Azure KeyVault (You are required to change the FilePath)
     $tlsCert = $keyVault | Import-AzKeyVaultCertificate -Name 'intermediate-cert' -Password $CertPassword -FilePath "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx"
+    ```
+
+11. **Create a Log Analytics Workspace to analyze logs from our Premium Firewall**
+
+    ```PowerShell
+    # Create a Log Analytics Workspace
+    $log = New-AzOperationalInsightsWorkspace @logParams
+
+    # Enables AzureFirewallApplicationRule, AzureFirewallNetworkRule and AzureFirewallDnsProxy rules
+    $logDiagnosticSettingsParams = @{
+       Name = "FW-Premium-Diagnostics-next"
+       ResourceId = $firewallPremium.Id
+       WorkspaceId = $log.ResourceId
+       Enabled = $true
+       RetentionEnable = $true
+       RetentionInDays = 30
+    }
+    echo $logDiagnosticSettingsParams
+
+    Set-AzDiagnosticSetting @logDiagnosticSettingsParams
     ```
 
 ### Additional Resources
