@@ -45,6 +45,13 @@ $vNetDefaultSubnetParams = @{
 }
 
 
+# Virtual Network default Subnet parameters
+$vNetBastionSubnetParams = @{
+   Name = 'AzureBastionSubnet'
+   AddressPrefix = '10.3.2.0/27'
+}
+
+
 # Windows 10 Pro Virtual Machine parameters for testing purposes
 $vmTestParams = @{
    Name = 'vmTestFwPremium'
@@ -53,6 +60,23 @@ $vmTestParams = @{
    PublisherName = 'MicrosoftWindowsDesktop'
    Offer = 'Windows-10'
    SKU = '19h2-pro'
+}
+
+
+# Bastion params to connect to our Windows 10 Pro testing Virtual Machine
+$bastionParams = @{
+   Name = 'testFwBastion'
+}
+
+
+#Bastion Public Ip parameters
+$bastionPipParams = @{
+   Name = "bastion-pip-002"
+   Location = $rgParams.Location
+   AllocationMethod = "Static"
+   Sku = "Standard"
+   Zone = "1", "2", "3"
+   ResourceGroupName = $rgParams.Name
 }
 
 
@@ -99,8 +123,11 @@ echo $rgParams
 echo $vNetParams
 echo $vNetFirewallSubnetParams
 echo $vNetDefaultSubnetParams
+echo $vNetBastionSubnetParams
 echo $vmTestParams
+echo $bastionParams
 echo $FirewallPipParams
+echo $bastionPipParams
 echo $firewallPremiumParams
 echo $keyVaultSettingsParams
 echo $managedIdentityParams
@@ -132,7 +159,7 @@ echo $keyVault | Format-Table
    $vNet = New-AzVirtualNetwork @vNetParams
    ```
 
-3. **Add an default and firewall subnet to our VNet**
+3. **Add a default, bastion and firewall subnet to our VNet**
 
    ```PowerShell
    # Get the VNet
@@ -141,6 +168,7 @@ echo $keyVault | Format-Table
    # Add an AzureFirewallSubnet to our VNet
    $vNet | Add-AzVirtualNetworkSubnetConfig @vNetFirewallSubnetParams
    $vNet | Add-AzVirtualNetworkSubnetConfig @vNetDefaultSubnetParams
+   $vNet | Add-AzVirtualNetworkSubnetConfig @vNetBastionSubnetParams
    $vNet | Set-AzVirtualNetwork
    ```
 
@@ -161,14 +189,24 @@ echo $keyVault | Format-Table
    New-AzVM -ResourceGroupName $rgParams.Name -Location $rgParams.Location -VM $VirtualMachine -Verbose
    ```
 
-5. **Deploy a zone-redundant public IP**
+5. Create a Windows 10 Pro VM for testing purposes
+
+   ```PowerShell
+   # Deploy a zone-redundant public IP for our bastion
+   $bastionPip = New-AzPublicIpAddress @bastionPipParams
+
+   # Deploy our bastion
+   $bastion = New-AzBastion -ResourceGroupName $rgParams.Name -Name $bastionParams.Name -PublicIpAddress $bastionPip -VirtualNetwork $vNet
+   ```
+
+6. **Deploy a zone-redundant public IP**
 
    ```PowerShell
    # Deploy a zone-redundant public IP
    $firewallPip = New-AzPublicIpAddress @FirewallPipParams
    ```
 
-6. **Deploy Azure Firewall Premium**
+7. **Deploy Azure Firewall Premium**
 
    ```PowerShell
    # Gather PSVirtualNetwork and PSPublicIpAddress
@@ -189,14 +227,14 @@ echo $keyVault | Format-Table
    $firewallPremium = New-AzFirewall @firewallPremiumParams
    ```
 
-7. **Create an Azure Key Vault**
+8. **Create an Azure Key Vault**
 
    ```PowerShell
    # Create an Azure Key Vault
    $keyVault = New-AzKeyVault @keyVaultSettingsParams
    ```
 
-8. **Create a Managed Identity with access to our KeyVault**
+9. **Create a Managed Identity with access to our KeyVault**
 
    ```PowerShell
    # Get a reference to our Azure Key Vault
