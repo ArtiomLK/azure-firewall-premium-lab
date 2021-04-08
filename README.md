@@ -189,7 +189,7 @@ echo $keyVault | Format-Table
    New-AzVM -ResourceGroupName $rgParams.Name -Location $rgParams.Location -VM $VirtualMachine -Verbose
    ```
 
-5. Create a Windows 10 Pro VM for testing purposes
+5. **Create a Windows 10 Pro VM for testing purposes**
 
    ```PowerShell
    # Deploy a zone-redundant public IP for our bastion
