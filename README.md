@@ -117,12 +117,22 @@ $managedIdentityParams = @{
    Location = $rgParams.Location
 }
 
+
 #Log Analytics Workspace Params
 $logParams = @{
    Name = "FW-premium-Workspace-next"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
    Sku = "Standard"
+}
+
+
+# Create a route table
+$routeTableParams = @{
+   Name = 'fw-premium-route-next'
+   ResourceGroupName = $rgParams.Name
+   Location = $rgParams.Location
+   DisableBgpRoutePropagation = $true
 }
 
 
@@ -140,6 +150,7 @@ echo $firewallPremiumParams
 echo $keyVaultSettingsParams
 echo $managedIdentityParams
 echo $logParams
+echo $routeTableParams
 
 
 # Gather required azure PSObjects used by PowerShell commands along the lab
@@ -284,6 +295,8 @@ echo $keyVault | Format-Table
 11. **Create a Log Analytics Workspace to analyze logs from our Premium Firewall**
 
     ```PowerShell
+    $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
+
     # Create a Log Analytics Workspace
     $log = New-AzOperationalInsightsWorkspace @logParams
 
@@ -299,6 +312,37 @@ echo $keyVault | Format-Table
     echo $logDiagnosticSettingsParams
 
     Set-AzDiagnosticSetting @logDiagnosticSettingsParams
+    ```
+
+12. **Route all traffic to our Firewall with a Azure Route**
+
+    ```PowerShell
+    $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
+    $vNet = Get-AzVirtualNetwork -ResourceGroupName $rgParams.Name -Name $vNetParams.Name
+
+    # Create a route table
+    $routeTable = New-AzRouteTable @routeTableParams
+
+    # Create a route config; 0-route will send all the traffic to the firewall
+    $toFwRouteConfigParams = @{
+       Name = "to-firewall-route"
+       RouteTable = $routeTable
+       AddressPrefix = "0.0.0.0/0"
+       NextHopType = "VirtualAppliance"
+       NextHopIpAddress = $firewallPremium.IpConfigurations.privateIpAddress
+    }
+    Add-AzRouteConfig @toFwRouteConfigParams | Set-AzRouteTable
+
+    # Associate the route table to the subnet
+    $subnetParameters = @{
+       Name = $vNetDefaultSubnetParams.Name
+       VirtualNetwork = $vNet
+       AddressPrefix = $vNetDefaultSubnetParams.AddressPrefix
+       RouteTable = $routeTable
+    }
+
+    # Assign the route table to the vNet
+    Set-AzVirtualNetworkSubnetConfig @subnetParameters | Set-AzVirtualNetwork
     ```
 
 ### Additional Resources
