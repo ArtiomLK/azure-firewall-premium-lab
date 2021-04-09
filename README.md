@@ -425,6 +425,78 @@ echo $fwPolicy | Format-Table
     New-AzFirewallPolicyRuleCollectionGroup -Name 'App-Categories' -Priority 200 -RuleCollection $AppCategoryCollectionAllow,$AppCategoryCollectionDeny -FirewallPolicyObject $fwPolicy
     ```
 
+15. **Configure Application Firewall Policy Rules for Windows Virtual Desktop to function properly**
+
+    ```PowerShell
+    $fwPolicy = Get-AzFirewallPolicy -Name $fwPolicyParams.Name -ResourceGroupName $fwPolicyParams.ResourceGroupName
+    # Create a rule collection group first
+    # $RuleCollectionGroup = New-AzFirewallPolicyRuleCollectionGroup -Name WVD-APP-URL-ALLOW -Priority 100 -FirewallPolicyObject $AzFwPolicy
+
+    # Define rules // part of the safe-url list https://docs.microsoft.com/en-us/azure/virtual-desktop/safe-url-list
+    $ApplicationRule1 = New-AzFirewallPolicyApplicationRule -Name 'wvd-microsoft-com' -Protocol "http:80","https:443" -TargetFqdn "*.wvd.microsoft.com" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix
+    $ApplicationRule2 = New-AzFirewallPolicyApplicationRule -Name 'gcs-windows-net' -Protocol "http:80","https:443" -TargetFqdn "gcs.prod.monitoring.core.windows.net" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix
+    $ApplicationRule3 = New-AzFirewallPolicyApplicationRule -Name 'diagnostics-windows-net' -Protocol "http:80","https:443" -TargetFqdn "production.diagnostics.monitoring.core.windows.net" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix
+
+    # TLS Inspection Rules
+    $ApplicationRule4 = New-AzFirewallPolicyApplicationRule -Name 'microsoft-com' -Protocol "http:80","https:443" -TargetFqdn "*.microsoft.com" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix -TerminateTLS
+    $ApplicationRule5 = New-AzFirewallPolicyApplicationRule -Name 'windows-net' -Protocol "http:80","https:443" -TargetFqdn "*.windows.net" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix -TerminateTLS
+
+    $ApplicationRuleCollection = @{
+       Name       = "WVD-App-Rules-Allow"
+       Priority   = 101
+       ActionType = "Allow"
+       Rule       = @($ApplicationRule1, $ApplicationRule2, $ApplicationRule3,$ApplicationRule4,$ApplicationRule5)
+    }
+    # Create a app rule collection
+    $AppRuleCollection = New-AzFirewallPolicyFilterRuleCollection @ApplicationRuleCollection
+
+    # Deploy to created rule collection group
+    New-AzFirewallPolicyRuleCollectionGroup -Name 'WVD-APP-URLs' -Priority 100 -RuleCollection $AppRuleCollection -FirewallPolicyObject $fwPolicy
+    ```
+
+16. **Configure Network Firewall Policy Rules for Windows Virtual Desktop to function properly**
+
+    ```PowerShell
+    $fwPolicy = Get-AzFirewallPolicy -Name $fwPolicyParams.Name -ResourceGroupName $fwPolicyParams.ResourceGroupName
+    # $RuleCollectionGroup = New-AzFirewallPolicyRuleCollectionGroup -Name WVD-NETWORK-ALLOW -Priority 104 -FirewallPolicyObject $AzFwPolicy
+    $Rule1Parameters = @{
+       Name               = "Allow-DNS"
+       Protocol           = "UDP"
+       sourceAddress      = $vNetDefaultSubnetParams.AddressPrefix
+       DestinationPort    = "53"
+       DestinationAddress = "*"
+    }
+    $Rule2Parameters = @{
+       Name               = "Allow-KMS"
+       Protocol           = "TCP"
+       sourceAddress      = $vNetDefaultSubnetParams.AddressPrefix
+       DestinationPort    = "1688"
+       DestinationAddress = "23.102.135.246"
+    }
+    $Rule3Parameters = @{
+       Name               = "Allow-NTP"
+       Protocol           = "UDP"
+       sourceAddress      = $vNetDefaultSubnetParams.AddressPrefix
+       DestinationPort    = "123"
+       DestinationAddress = "51.105.208.173"
+    }
+
+    $rule1 = New-AzFirewallPolicyNetworkRule @Rule1Parameters
+    $rule2 = New-AzFirewallPolicyNetworkRule @Rule2Parameters
+    $rule3 = New-AzFirewallPolicyNetworkRule @Rule3Parameters
+
+    $NetworkRuleCollection = @{
+       Name       = "WVD-Network-Rules-Allow"
+       Priority   = 102
+       ActionType = "Allow"
+       Rule       = @($rule1, $rule2, $rule3)
+    }
+    # Create a app rule collection
+    $NetworkRuleCategoryCollection = New-AzFirewallPolicyFilterRuleCollection @NetworkRuleCollection
+    # Deploy to created rule collection group
+    New-AzFirewallPolicyRuleCollectionGroup -Name WVD-NETWORK -Priority 104 -RuleCollection $NetworkRuleCategoryCollection -FirewallPolicyObject $fwPolicy
+    ```
+
 ### Additional Resources
 
 - [Configure Azure Firewall Premium features for WVD automated][1]
