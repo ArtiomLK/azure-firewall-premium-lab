@@ -192,7 +192,7 @@ echo $keyVault | Format-Table
    $vNet | Set-AzVirtualNetwork
    ```
 
-4. Create a Windows 10 Pro VM for testing purposes
+4. **Create a Windows 10 Pro VM for testing purposes**
 
    ```PowerShell
    # The NIC should be added to the subnet where VMs will be deployed (Not the AzureFirewallSubnet), you could double check with echo
