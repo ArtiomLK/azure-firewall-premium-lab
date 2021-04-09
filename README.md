@@ -359,7 +359,7 @@ echo $tlsCert | Format-Table
     Set-AzVirtualNetworkSubnetConfig @subnetParameters | Set-AzVirtualNetwork
     ```
 
-13. **Deploy a premium azure firewall policy with Intrusion Detection and Prevention System IDPS**
+13. **Deploy a premium azure firewall policy with Intrusion Detection and Prevention System (IDPS)**
 
     ```PowerShell
     $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
