@@ -192,7 +192,7 @@ echo $keyVault | Format-Table
    $vNet | Set-AzVirtualNetwork
    ```
 
-4. Create a Windows 10 Pro VM for testing purposes
+4. **Create a Windows 10 Pro VM for testing purposes**
 
    ```PowerShell
    # The NIC should be added to the subnet where VMs will be deployed (Not the AzureFirewallSubnet), you could double check with echo
@@ -204,6 +204,7 @@ echo $keyVault | Format-Table
    $VirtualMachine = Set-AzVMOperatingSystem -VM $VirtualMachine -Windows -ComputerName $vmTestParams.Name -ProvisionVMAgent -EnableAutoUpdate # Provide a User and Password which later on will be used to login into the test VM
    $VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id
    $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName $vmTestParams.PublisherName -Offer $vmTestParams.Offer -Skus $vmTestParams.SKU -Version latest
+   $VirtualMachine | Set-AzVMBootDiagnostic -Disable
 
    # Create our test VM
    New-AzVM -ResourceGroupName $rgParams.Name -Location $rgParams.Location -VM $VirtualMachine -Verbose
