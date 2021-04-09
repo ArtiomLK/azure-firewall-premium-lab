@@ -14,7 +14,9 @@
 0. **Initialize required Params used along the lab**
 
 ```PowerShell
-# Initialize required Params used along the lab
+# ---
+# Parameters used along the lab
+# ---
 
 # ResourceGroup parameters
 $rgParams = @{
@@ -144,6 +146,18 @@ $routeTableParams = @{
 }
 
 
+# Firewall Premium policy
+$fwPolicyParams = @{
+   Name = 'fw-premium-policy-next'
+   ResourceGroupName = $rgParams.Name
+   Location = $rgParams.Location
+   SkuTier = "Premium"
+   TransportSecurityName = "tls-premium-fw"
+   TransportSecurityKeyVaultSecretId = $tlsCert.SecretId
+   UserAssignedIdentityId = $keyVaultManagedIdentity.Id
+   IntrusionDetection = $idpsSettings
+}
+
 # Test our created variables
 echo $rgParams
 echo $vNetParams
@@ -160,15 +174,19 @@ echo $keyVaultIntermediateCertParams
 echo $managedIdentityParams
 echo $logParams
 echo $routeTableParams
+echo $fwPolicyParams
 
+# ---
+# PSObjects used by PowerShell commands along the lab
+# ---
 
-# Gather required azure PSObjects used by PowerShell commands along the lab
 $vNet = Get-AzVirtualNetwork -ResourceGroupName $rgParams.Name -Name $vNetParams.Name
 $firewallPip = Get-AzPublicIpAddress -ResourceGroupName $rgParams.Name -Name $FirewallPipParams.Name
 $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
 $keyVault = Get-AzKeyVault -VaultName $keyVaultSettingsParams.Name -ResourceGroupName $keyVaultSettingsParams.ResourceGroupName
 $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
 $tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name -InputObject $keyVault
+$fwPolicy = Get-AzFirewallPolicy -Name $fwPolicyParams.Name -ResourceGroupName $fwPolicyParams.ResourceGroupName
 # Review Created Azure Resources
 echo $vNet | Format-Table
 echo $firewallPip | Format-Table
@@ -176,6 +194,7 @@ echo $firewallPremium | Format-Table
 echo $keyVault | Format-Table
 echo $keyVaultManagedIdentity | Format-Table
 echo $tlsCert | Format-Table
+echo $fwPolicy | Format-Table
 ```
 
 1. **Create an Azure Resource Group where all our Azure Resources will be grouped**
@@ -368,7 +387,7 @@ echo $tlsCert | Format-Table
     # Enable IDPS
     $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
 
-    $fwPolicySettings = @{
+    $fwPolicyParams = @{
        Name = 'fw-premium-policy-next'
        ResourceGroupName = $rgParams.Name
        Location = $rgParams.Location
@@ -380,6 +399,30 @@ echo $tlsCert | Format-Table
     }
 
     $fwPolicy = New-AzFirewallPolicy @fwPolicySettings
+    ```
+
+14. **Configure web category filtering in our Azure Firewall Premium Policy**
+
+    ```PowerShell
+    $fwPolicy = Get-AzFirewallPolicy -Name $fwPolicyParams.Name -ResourceGroupName $fwPolicyParams.ResourceGroupName
+    # Create a rule collection category group first
+    #$RuleCatCollectionGroup = New-AzFirewallPolicyRuleCollectionGroup -Name App-Categories -Priority 200 -FirewallPolicyObject $fwPolicy
+
+
+    $categoryRuleD1 =  New-AzFirewallPolicyApplicationRule  -WebCategory 'Gambling' -Name 'Gambling' -Protocol "http:80","https:443" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix -TerminateTLS
+    $categoryRuleD2 =  New-AzFirewallPolicyApplicationRule  -WebCategory 'Games' -Name 'Games' -Protocol "http:80","https:443"  -SourceAddress $vNetDefaultSubnetParams.AddressPrefix -TerminateTLS
+
+    # Create a Deny app rule collection
+    $AppCategoryCollectionDeny = New-AzFirewallPolicyFilterRuleCollection -Name App-Categories-Deny -Priority 205 -Rule $categoryRuleD1,$categoryRuleD2 -ActionType "Deny"
+
+    $categoryRuleA1 =  New-AzFirewallPolicyApplicationRule  -WebCategory 'Education' -Name 'Education' -Protocol "http:80","https:443" -SourceAddress $vNetDefaultSubnetParams.AddressPrefix -TerminateTLS
+    $categoryRuleA2 =  New-AzFirewallPolicyApplicationRule  -WebCategory 'ProfessionalNetworking' -Name 'ProfessionalNetworking' -Protocol "http:80","https:443"  -SourceAddress $vNetDefaultSubnetParams.AddressPrefix -TerminateTLS
+
+    # Create an Allow app rule collection
+    $AppCategoryCollectionAllow = New-AzFirewallPolicyFilterRuleCollection -Name App-Categories-Allow -Priority 210 -Rule $categoryRuleA1,$categoryRuleA2 -ActionType "Allow"
+
+    # Deploy to created rule collection group
+    New-AzFirewallPolicyRuleCollectionGroup -Name 'App-Categories' -Priority 200 -RuleCollection $AppCategoryCollectionAllow,$AppCategoryCollectionDeny -FirewallPolicyObject $fwPolicy
     ```
 
 ### Additional Resources
