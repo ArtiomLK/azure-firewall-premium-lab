@@ -110,6 +110,14 @@ $keyVaultSettingsParams = @{
 }
 
 
+# Key Vault Intermediate Cert
+$keyVaultIntermediateCertParams = @{
+   Name = "intermediate-cert"
+   FilePath = "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx"
+   Password = "Password123!"
+}
+
+
 # Managed Identity parameters
 $managedIdentityParams = @{
    Name = "fw-managed-identity-tls-next"
@@ -148,6 +156,7 @@ echo $FirewallPipParams
 echo $bastionPipParams
 echo $firewallPremiumParams
 echo $keyVaultSettingsParams
+echo $keyVaultIntermediateCertParams
 echo $managedIdentityParams
 echo $logParams
 echo $routeTableParams
@@ -158,11 +167,15 @@ $vNet = Get-AzVirtualNetwork -ResourceGroupName $rgParams.Name -Name $vNetParams
 $firewallPip = Get-AzPublicIpAddress -ResourceGroupName $rgParams.Name -Name $FirewallPipParams.Name
 $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
 $keyVault = Get-AzKeyVault -VaultName $keyVaultSettingsParams.Name -ResourceGroupName $keyVaultSettingsParams.ResourceGroupName
+$keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
+$tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name -InputObject $keyVault
 # Review Created Azure Resources
 echo $vNet | Format-Table
 echo $firewallPip | Format-Table
 echo $firewallPremium | Format-Table
 echo $keyVault | Format-Table
+echo $keyVaultManagedIdentity | Format-Table
+echo $tlsCert | Format-Table
 ```
 
 1. **Create an Azure Resource Group where all our Azure Resources will be grouped**
@@ -288,9 +301,9 @@ echo $keyVault | Format-Table
     $keyVault = Get-AzKeyVault -VaultName $keyVaultSettingsParams.Name -ResourceGroupName $keyVaultSettingsParams.ResourceGroupName
 
     # Create a Cert password for testing purposes, ( in real env this should not be in code)
-    $CertPassword = ConvertTo-SecureString -String "Password123!" -Force -AsPlainText
+    $CertPassword = ConvertTo-SecureString -String $keyVaultIntermediateCertParams.Password -Force -AsPlainText
     # Import the generated Certificate to Azure KeyVault (You are required to change the FilePath)
-    $tlsCert = $keyVault | Import-AzKeyVaultCertificate -Name 'intermediate-cert' -Password $CertPassword -FilePath "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx"
+    $tlsCert = $keyVault | Import-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name -Password $CertPassword -FilePath $keyVaultIntermediateCertParams.FilePath
     ```
 
 11. **Create a Log Analytics Workspace to analyze logs from our Premium Firewall**
@@ -344,6 +357,29 @@ echo $keyVault | Format-Table
 
     # Assign the route table to the vNet
     Set-AzVirtualNetworkSubnetConfig @subnetParameters | Set-AzVirtualNetwork
+    ```
+
+13. **Deploy a premium azure firewall policy with Intrusion Detection and Prevention System IDPS**
+
+    ```PowerShell
+    $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
+    $tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name  -InputObject $keyVault
+
+    # Enable IDPS
+    $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
+
+    $fwPolicySettings = @{
+       Name = 'fw-premium-policy-next'
+       ResourceGroupName = $rgParams.Name
+       Location = $rgParams.Location
+       SkuTier = "Premium"
+       TransportSecurityName = "tls-premium-fw"
+       TransportSecurityKeyVaultSecretId = $tlsCert.SecretId
+       UserAssignedIdentityId = $keyVaultManagedIdentity.Id
+       IntrusionDetection = $idpsSettings
+    }
+
+    $fwPolicy = New-AzFirewallPolicy @fwPolicySettings
     ```
 
 ### Additional Resources
