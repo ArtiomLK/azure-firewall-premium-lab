@@ -147,7 +147,7 @@ $routeTableParams = @{
 
 
 # Firewall Premium policy
-$fwPolicySettingsParams = @{
+$fwPolicyParams = @{
    Name = 'fw-premium-policy-next'
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
@@ -174,7 +174,7 @@ echo $keyVaultIntermediateCertParams
 echo $managedIdentityParams
 echo $logParams
 echo $routeTableParams
-echo $fwPolicySettingsParams
+echo $fwPolicyParams
 
 # ---
 # PSObjects used by PowerShell commands along the lab
@@ -186,7 +186,7 @@ $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Na
 $keyVault = Get-AzKeyVault -VaultName $keyVaultSettingsParams.Name -ResourceGroupName $keyVaultSettingsParams.ResourceGroupName
 $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
 $tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name -InputObject $keyVault
-$fwPolicy = Get-AzFirewallPolicy -Name $fwPolicySettingsParams.Name -ResourceGroupName $fwPolicySettingsParams.ResourceGroupName
+$fwPolicy = Get-AzFirewallPolicy -Name $fwPolicyParams.Name -ResourceGroupName $fwPolicyParams.ResourceGroupName
 # Review Created Azure Resources
 echo $vNet | Format-Table
 echo $firewallPip | Format-Table
@@ -387,7 +387,7 @@ echo $fwPolicy | Format-Table
     # Enable IDPS
     $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
 
-    $fwPolicySettingsParams = @{
+    $fwPolicyParams = @{
        Name = 'fw-premium-policy-next'
        ResourceGroupName = $rgParams.Name
        Location = $rgParams.Location
@@ -404,7 +404,7 @@ echo $fwPolicy | Format-Table
 14. **Configure web category filtering in our Azure Firewall Premium Policy**
 
     ```PowerShell
-    $fwPolicy = Get-AzFirewallPolicy -Name $fwPolicySettingsParams.Name -ResourceGroupName $fwPolicySettingsParams.ResourceGroupName
+    $fwPolicy = Get-AzFirewallPolicy -Name $fwPolicyParams.Name -ResourceGroupName $fwPolicyParams.ResourceGroupName
     # Create a rule collection category group first
     #$RuleCatCollectionGroup = New-AzFirewallPolicyRuleCollectionGroup -Name App-Categories -Priority 200 -FirewallPolicyObject $fwPolicy
 
