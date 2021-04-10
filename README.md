@@ -378,11 +378,12 @@ echo $fwPolicy | Format-Table
     Set-AzVirtualNetworkSubnetConfig @subnetParameters | Set-AzVirtualNetwork
     ```
 
-13. **Deploy a premium azure firewall policy with Intrusion Detection and Prevention System (IDPS)**
+13. **Deploy and associate a premium azure firewall policy with Intrusion Detection and Prevention System (IDPS)**
 
     ```PowerShell
     $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
     $tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name  -InputObject $keyVault
+    $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
 
     # Enable IDPS
     $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
@@ -398,7 +399,12 @@ echo $fwPolicy | Format-Table
        IntrusionDetection = $idpsSettings
     }
 
+    # Create our Azure Premium Firewall Policy
     $fwPolicy = New-AzFirewallPolicy @fwPolicySettings
+
+    # Associate our policy to our Azure premium firewall
+    $firewallPremium.FirewallPolicy = $fwPolicy.Id
+    $firewallPremium | Set-AzFirewall
     ```
 
 14. **Configure web category filtering in our Azure Firewall Premium Policy**
