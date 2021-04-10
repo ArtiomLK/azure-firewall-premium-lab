@@ -307,7 +307,7 @@ echo $fwPolicy | Format-Table
     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
     # Create our self Signed Certificates
-    cd .\scripts\ & .\cert.ps1 & cd ..
+    cd .\scripts\ ; .\cert.ps1 ; cd ..
     ```
 
     > Note: After the certificates are created, deploy them to the following locations:
