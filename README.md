@@ -516,7 +516,7 @@ echo $fwPolicy | Format-Table
 
 17. **Validate TLS**
 
-    Update fqdn allow `*.bing.com`
+    Update fqdn allow `*bing.com`
 
     ```SQL (KQL)
     AzureDiagnostics
