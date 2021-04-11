@@ -18,62 +18,77 @@
 # Parameters used along the lab
 # ---
 
-# ResourceGroup parameters
-$rgParams = @{
-   Name = "rg-fw-premium-next"
+#Replace the following params within $p
+
+$p = @{
+   Suffix = "lk"
    Location = "EastUS"
+   AddressPrefix = "10.4"  # will create a vnet address space of 10.4.0.0/16. Valid inputs could be "10.10" or "20.15" as long as the address is not used by other Virtual Network
+   InterCAFilePath = "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx" # once we reach the Certificate part in this guide, we will update this intermediateCA file path
+}
+
+# ResourceGroup parameters
+
+$c = @{
+   AppName = "fwp"
+   Env = "test"
+}
+
+$rgParams = @{
+   Name = "rg-$($c.AppName)-$($c.Env)-$($p.Suffix)"
+   Location = "$($p.Location)"
 }
 
 # Virtual Network parameters
 $vNetParams = @{
-   Name = 'vnet-fw-premium-next'
+   Name = "vnet-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
-   AddressPrefix = '10.3.0.0/16'
+   AddressPrefix = "$($p.AddressPrefix).0.0/16"
 }
 
 
 # Virtual Network Azure Firewall Subnet parameters
 $vNetFirewallSubnetParams = @{
-   Name = 'AzureFirewallSubnet'
-   AddressPrefix = '10.3.0.0/24'
+   Name = "AzureFirewallSubnet"
+   AddressPrefix = "$($p.AddressPrefix).0.0/24"
 }
 
 
 # Virtual Network default Subnet parameters
 $vNetDefaultSubnetParams = @{
-   Name = 'default'
-   AddressPrefix = '10.3.1.0/24'
+   Name = "default"
+   AddressPrefix = "$($p.AddressPrefix).1.0/24"
 }
 
 
 # Virtual Network default Subnet parameters
 $vNetBastionSubnetParams = @{
-   Name = 'AzureBastionSubnet'
-   AddressPrefix = '10.3.2.0/27'
+   Name = "AzureBastionSubnet"
+   AddressPrefix = "$($p.AddressPrefix).2.0/27"
 }
 
 
 # Windows 10 Pro Virtual Machine parameters for testing purposes
 $vmTestParams = @{
-   Name = 'vmTestFwPremium'
-   Size = 'Standard_DS3_v2'
-   NICName = 'vmTestFwPremiumNIC'
-   PublisherName = 'MicrosoftWindowsDesktop'
-   Offer = 'Windows-10'
-   SKU = '19h2-pro'
+   Name = "vm-$($c.AppName)-$($c.Env)-$($p.Suffix)"
+   Size = "Standard_DS3_v2"
+   NICName = "nic-vm-$($c.AppName)-$($c.Env)-$($p.Suffix)"
+   PublisherName = "MicrosoftWindowsDesktop"
+   Offer = "Windows-10"
+   SKU = "19h2-pro"
 }
 
 
 # Bastion params to connect to our Windows 10 Pro testing Virtual Machine
 $bastionParams = @{
-   Name = 'testFwBastion'
+   Name = "bastion-$($c.AppName)-$($c.Env)-$($p.Suffix)"
 }
 
 
 #Bastion Public Ip parameters
 $bastionPipParams = @{
-   Name = "bastion-pip-002"
+   Name = "pip-bastion-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    Location = $rgParams.Location
    AllocationMethod = "Static"
    Sku = "Standard"
@@ -84,7 +99,7 @@ $bastionPipParams = @{
 
 #Public Ip parameters
 $FirewallPipParams = @{
-   Name = "fw-pip-002"
+   Name = "pip-fw-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    Location = $rgParams.Location
    AllocationMethod = "Static"
    Sku = "Standard"
@@ -95,7 +110,7 @@ $FirewallPipParams = @{
 
 # Firewall Premium params
 $firewallPremiumParams = @{
-   Name = "fw-premium-next"
+   Name = "fw-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
    VirtualNetwork = $vNet
@@ -106,7 +121,7 @@ $firewallPremiumParams = @{
 
 # Key Vault parameters
 $keyVaultSettingsParams = @{
-   Name = "kv-firewall-tls-lk-next"
+   Name = "kv-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
 }
@@ -115,14 +130,14 @@ $keyVaultSettingsParams = @{
 # Key Vault Intermediate Cert
 $keyVaultIntermediateCertParams = @{
    Name = "intermediate-cert"
-   FilePath = "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx"
+   FilePath = "$($p.InterCAFilePath)"
    Password = "Password123!"
 }
 
 
 # Managed Identity parameters
 $managedIdentityParams = @{
-   Name = "fw-managed-identity-tls-next"
+   Name = "id-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
 }
@@ -130,7 +145,7 @@ $managedIdentityParams = @{
 
 #Log Analytics Workspace Params
 $logParams = @{
-   Name = "FW-premium-Workspace-next"
+   Name = "log-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
    Sku = "Standard"
@@ -139,7 +154,7 @@ $logParams = @{
 
 # Create a route table
 $routeTableParams = @{
-   Name = 'fw-premium-route-next'
+   Name = "route-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
    DisableBgpRoutePropagation = $true
@@ -148,7 +163,7 @@ $routeTableParams = @{
 
 # Firewall Premium policy
 $fwPolicyParams = @{
-   Name = 'fw-premium-policy-next'
+   Name = "fw-policy-$($c.AppName)-$($c.Env)-$($p.Suffix)"
    ResourceGroupName = $rgParams.Name
    Location = $rgParams.Location
    SkuTier = "Premium"
@@ -168,13 +183,13 @@ echo $vmTestParams
 echo $bastionParams
 echo $FirewallPipParams
 echo $bastionPipParams
-echo $firewallPremiumParams
+echo $firewallPremiumParams # must be recreated latter on during la, read comments while working on this guide
 echo $keyVaultSettingsParams
 echo $keyVaultIntermediateCertParams
 echo $managedIdentityParams
 echo $logParams
 echo $routeTableParams
-echo $fwPolicyParams
+echo $fwPolicyParams # must be recreated latter on during lab, read comments while working on this guide
 
 # ---
 # PSObjects used by PowerShell commands along the lab
@@ -242,7 +257,7 @@ echo $fwPolicy | Format-Table
    New-AzVM -ResourceGroupName $rgParams.Name -Location $rgParams.Location -VM $VirtualMachine -Verbose
    ```
 
-5. **Create a Windows 10 Pro VM for testing purposes**
+5. **Create a bastion to connect to our Windows 10 Pro VM for testing purposes**
 
    ```PowerShell
    # Deploy a zone-redundant public IP for our bastion
@@ -266,15 +281,11 @@ echo $fwPolicy | Format-Table
    $vNet = Get-AzVirtualNetwork -ResourceGroupName $rgParams.Name -Name $vNetParams.Name
    $firewallPip = Get-AzPublicIpAddress -ResourceGroupName $rgParams.Name -Name $FirewallPipParams.Name
 
-   # Recreate the Firewall Premium params if required
-   $firewallPremiumParams = @{
-      Name = "fw-premium-next"
-      ResourceGroupName = $rgParams.Name
-      Location = $rgParams.Location
-      VirtualNetwork = $vNet
-      PublicIpAddress = $firewallPip
-      SkuTier = "Premium"
-   }
+   <# !!! READ COMMENT
+   Recreate the Firewall Premium params
+   RUN THE ABOVE CODE: $firewallPremiumParams = @{ ... }
+   #>
+   echo $firewallPremiumParams
 
    # Deploy Azure Firewall Premium
    $firewallPremium = New-AzFirewall @firewallPremiumParams
@@ -296,7 +307,7 @@ echo $fwPolicy | Format-Table
    # Create our Managed Identity resource
    $keyVaultManagedIdentity = New-AzUserAssignedIdentity @managedIdentityParams
    $objectId = Get-AzADServicePrincipal -DisplayName $keyVaultManagedIdentity.Name
-   $keyVault | New-AzRoleAssignment -RoleDefinitionName "Reader" -objectId $objectId.Id
+   $keyVault | New-AzRoleAssignment -RoleDefinitionName "Reader" -objectId $objectId.Id # if 'ObjectId'. The argument is null or empty just wait until resource fully created
    $keyVault | Set-AzKeyVaultAccessPolicy -objectId $objectId.Id -PermissionsToCertificates "Get","List" -PermissionsToSecrets "Get","List"
    ```
 
@@ -333,7 +344,7 @@ echo $fwPolicy | Format-Table
     # Create a Log Analytics Workspace
     $log = New-AzOperationalInsightsWorkspace @logParams
 
-    # Enables AzureFirewallApplicationRule, AzureFirewallNetworkRule and AzureFirewallDnsProxy rules
+    # Enables and forwards AzureFirewallApplicationRule, AzureFirewallNetworkRule and AzureFirewallDnsProxy diagnostics rules to our Azure Log Analytics Workspace
     $logDiagnosticSettingsParams = @{
        Name = "FW-Premium-Diagnostics-next"
        ResourceId = $firewallPremium.Id
@@ -344,6 +355,7 @@ echo $fwPolicy | Format-Table
     }
     echo $logDiagnosticSettingsParams
 
+    # Enables and forwards AzureFirewallApplicationRule, AzureFirewallNetworkRule and AzureFirewallDnsProxy diagnostics rules to our Log Analytics Workspace
     Set-AzDiagnosticSetting @logDiagnosticSettingsParams
     ```
 
@@ -388,23 +400,22 @@ echo $fwPolicy | Format-Table
     # Enable IDPS
     $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
 
-    $fwPolicyParams = @{
-       Name = 'fw-premium-policy-next'
-       ResourceGroupName = $rgParams.Name
-       Location = $rgParams.Location
-       SkuTier = "Premium"
-       TransportSecurityName = "tls-premium-fw"
-       TransportSecurityKeyVaultSecretId = $tlsCert.SecretId
-       UserAssignedIdentityId = $keyVaultManagedIdentity.Id
-       IntrusionDetection = $idpsSettings
-    }
+    <# !!! READ COMMENT
+    Recreate the Firewall Policy Premium params
+    RUN THE ABOVE CODE: $fwPolicyParams = @{ ... }
+    #>
+    echo $fwPolicyParams
 
     # Create our Azure Premium Firewall Policy
-    $fwPolicy = New-AzFirewallPolicy @fwPolicySettings
+    $fwPolicy = New-AzFirewallPolicy @fwPolicyParams
 
     # Associate our policy to our Azure premium firewall
     $firewallPremium.FirewallPolicy = $fwPolicy.Id
     $firewallPremium | Set-AzFirewall
+
+    <# !!! READ COMMENT
+    Manually add our SelfSigned Certificate into our Azure Firewall Policy by enabling TLS inside our Firewall Policy
+    #>
     ```
 
 14. **Configure web category filtering in our Azure Firewall Premium Policy**
@@ -501,6 +512,18 @@ echo $fwPolicy | Format-Table
     $NetworkRuleCategoryCollection = New-AzFirewallPolicyFilterRuleCollection @NetworkRuleCollection
     # Deploy to created rule collection group
     New-AzFirewallPolicyRuleCollectionGroup -Name WVD-NETWORK -Priority 104 -RuleCollection $NetworkRuleCategoryCollection -FirewallPolicyObject $fwPolicy
+    ```
+
+17. **Validate TLS**
+
+    Update fqdn allow `*.bing.com`
+
+    ```SQL (KQL)
+    AzureDiagnostics
+    | where ResourceType == "AZUREFIREWALLS"
+    | where Category == "AzureFirewallApplicationRule"
+    | where msg_s contains "Url: wikipedia.com"
+    | sort by TimeGenerated desc
     ```
 
 ### Additional Resources
