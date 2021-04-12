@@ -311,7 +311,35 @@
     $tlsCert = $keyVault | Import-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name -Password $CertPassword -FilePath $keyVaultIntermediateCertParams.FilePath
     ```
 
-11. **Create a Log Analytics Workspace to analyze logs from our Premium Firewall**
+11. **Enable TLS inspection and IDPS by creating an Azure Firewall Policy and Associating it to our Azure Firewall**
+
+    ```PowerShell
+    $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
+    $tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name  -InputObject $keyVault
+    $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
+
+    # Enable IDPS
+    $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
+
+    <# !!! READ COMMENT
+    Recreate the Firewall Policy Premium params
+    RUN THE ABOVE CODE: $fwPolicyParams = @{ ... }
+    #>
+    echo $fwPolicyParams
+
+    # Create our Azure Premium Firewall Policy
+    $fwPolicy = New-AzFirewallPolicy @fwPolicyParams
+
+    # Associate our policy to our Azure premium firewall
+    $firewallPremium.FirewallPolicy = $fwPolicy.Id
+    $firewallPremium | Set-AzFirewall
+
+    <# !!! READ COMMENT
+    Review that the self-signed certificate was uploaded to our Azure Firewall Policy under azFirewallPolicy TLS inspection
+    #>
+    ```
+
+12. **Create a Log Analytics Workspace to analyze logs from our Premium Firewall**
 
     ```PowerShell
     $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
@@ -334,7 +362,7 @@
     Set-AzDiagnosticSetting @logDiagnosticSettingsParams
     ```
 
-12. **Route all traffic to our Firewall with a Azure Route**
+13. **Route all traffic to our Firewall with a Azure Route**
 
     ```PowerShell
     $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
@@ -363,34 +391,6 @@
 
     # Assign the route table to the vNet
     Set-AzVirtualNetworkSubnetConfig @subnetParameters | Set-AzVirtualNetwork
-    ```
-
-13. **Deploy and associate a premium azure firewall policy with Intrusion Detection and Prevention System (IDPS)**
-
-    ```PowerShell
-    $keyVaultManagedIdentity = Get-AzUserAssignedIdentity -ResourceGroupName $managedIdentityParams.ResourceGroupName -Name $managedIdentityParams.Name
-    $tlsCert = Get-AzKeyVaultCertificate -Name $keyVaultIntermediateCertParams.Name  -InputObject $keyVault
-    $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
-
-    # Enable IDPS
-    $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
-
-    <# !!! READ COMMENT
-    Recreate the Firewall Policy Premium params
-    RUN THE ABOVE CODE: $fwPolicyParams = @{ ... }
-    #>
-    echo $fwPolicyParams
-
-    # Create our Azure Premium Firewall Policy
-    $fwPolicy = New-AzFirewallPolicy @fwPolicyParams
-
-    # Associate our policy to our Azure premium firewall
-    $firewallPremium.FirewallPolicy = $fwPolicy.Id
-    $firewallPremium | Set-AzFirewall
-
-    <# !!! READ COMMENT
-    Manually add our SelfSigned Certificate into our Azure Firewall Policy by enabling TLS inside our Firewall Policy
-    #>
     ```
 
 14. **Configure web category filtering in our Azure Firewall Premium Policy**
