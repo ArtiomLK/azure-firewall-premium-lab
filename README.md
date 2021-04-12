@@ -282,7 +282,7 @@
    # Create our Managed Identity resource
    $keyVaultManagedIdentity = New-AzUserAssignedIdentity @managedIdentityParams
    $objectId = Get-AzADServicePrincipal -DisplayName $keyVaultManagedIdentity.Name
-   $keyVault | New-AzRoleAssignment -RoleDefinitionName "Reader" -objectId $objectId.Id # if the 'ObjectId' argument is null or empty just wait until the resource fully created
+   $keyVault | New-AzRoleAssignment -RoleDefinitionName "Reader" -objectId $objectId.Id # if the 'ObjectId' argument is null or empty just wait until the resource is fully created
    $keyVault | Set-AzKeyVaultAccessPolicy -objectId $objectId.Id -PermissionsToCertificates "Get","List" -PermissionsToSecrets "Get","List"
    ```
 
