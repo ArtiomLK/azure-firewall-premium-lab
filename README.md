@@ -16,7 +16,7 @@
    ```PowerShell
    # ---
    # REQUIRED
-   # Replace the following params within $p
+   # Replace the following param values within $p
    # ---
    $p = @{
       Suffix = "lk"
@@ -27,7 +27,7 @@
 
    # ---
    # OPTIONAL
-   # You could replace the following params within $c
+   # You could replace the following param values within $c
    # ---
    $c = @{
       AppName = "fwp"
