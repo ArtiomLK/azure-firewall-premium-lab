@@ -335,7 +335,7 @@
     $firewallPremium | Set-AzFirewall
 
     <# !!! READ COMMENT
-    Review the self-signed certificate was uploaded to our Azure Firewall Policy under azFirewallPolicy TLS inspection
+    Review that the self-signed certificate was uploaded to our Azure Firewall Policy under azFirewallPolicy TLS inspection
     #>
     ```
 
