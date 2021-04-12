@@ -335,7 +335,7 @@
     $firewallPremium | Set-AzFirewall
 
     <# !!! READ COMMENT
-    Manually add our SelfSigned Certificate into our Azure Firewall Policy by enabling TLS inside our Firewall Policy
+    Review the self-signed certificate was uploaded to our Azure Firewall Policy under azFirewallPolicy TLS inspection
     #>
     ```
 
