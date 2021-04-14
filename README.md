@@ -143,7 +143,7 @@
       Location = $rgParams.Location
       SkuTier = "Premium"
       TransportSecurityName = "tls-premium-fw"
-      TransportSecurityKeyVaultSecretId = $tlsCert.SecretId
+      TransportSecurityKeyVaultSecretId = $tlsCert.SecretId.Replace(":443","")
       UserAssignedIdentityId = $keyVaultManagedIdentity.Id
       IntrusionDetection = $idpsSettings
    }
