@@ -19,7 +19,7 @@
    # Replace the following param values within $p
    # ---
    $p = @{
-      Suffix = "lk"
+      Suffix = "lk" # MUST be 3 or less characters e.g. alk (OK), arlk (NOT OK)
       Location = "EastUS"
       AddressPrefix = "10.4"  # generates a 10.4.0.0/16 vnet address space of . Valid inputs could be "10.10" that generated "10.10.0.0/16" or "20.15" which generated "20.15.0.0/16.
       InterCAFilePath = "C:\ArtiomLK\github\azure-firewall-premium-lab\scripts\interCA.pfx" # by now don't worry, once we reach the generating self signed certificate part in this guide, we will update this intermediateCA file path
@@ -217,8 +217,11 @@
 4. **Create a Windows 10 Pro VM for testing purposes**
 
    ```PowerShell
+   # Get the VNet
+   $vNet = Get-AzVirtualNetwork -ResourceGroupName $rgParams.Name -Name $vNetParams.Name
+
    # The NIC should be added to the subnet where VMs will be deployed (Not the AzureFirewallSubnet), you could double check with echo
-   echo $ $vNet.Subnets[1]
+   echo $vNet.Subnets[1]
    # Create a Network Interface Card
    $NIC = New-AzNetworkInterface -Name $vmTestParams.NICName -ResourceGroupName $rgParams.Name -Location $rgParams.Location -SubnetId $vNet.Subnets[1].Id
 
@@ -491,13 +494,13 @@
 
 17. **Validate TLS**
 
-    Update fqdn allow `*bing.com`
+    Update a fqdn to allow `*bing.com`
 
     ```SQL (KQL)
     AzureDiagnostics
     | where ResourceType == "AZUREFIREWALLS"
     | where Category == "AzureFirewallApplicationRule"
-    | where msg_s contains "Url: wikipedia.com"
+    | where msg_s contains "Url: bing.com"
     | sort by TimeGenerated desc
     ```
 
