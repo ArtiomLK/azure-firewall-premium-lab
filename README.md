@@ -322,7 +322,8 @@
     $firewallPremium = Get-AzFirewall -ResourceGroupName $vNet.ResourceGroupName -Name $firewallPremiumParams.Name
 
     # Enable IDPS
-    $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert"
+    $signatureOverride = New-AzFirewallPolicyIntrusionDetectionSignatureOverride -Id "2008983" -Mode "Deny"
+    $idpsSettings = New-AzFirewallPolicyIntrusionDetection -Mode "Alert" -SignatureOverride $signatureOverride
 
     <# !!! READ COMMENT
     Recreate the Firewall Policy Premium params
