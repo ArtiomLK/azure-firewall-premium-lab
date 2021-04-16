@@ -146,6 +146,7 @@
       TransportSecurityKeyVaultSecretId = $tlsCert.SecretId
       UserAssignedIdentityId = $keyVaultManagedIdentity.Id
       IntrusionDetection = $idpsSettings
+      ThreatIntelMode = "Deny"
    }
 
    # Test our created variables
