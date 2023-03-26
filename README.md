@@ -1,6 +1,4 @@
-[Back][0]
-
-# Azure Firewall Premium Preview Tutorial with PowerShell
+# Azure Firewall Premium Tutorial with PowerShell
 
 | Command                                                            | Description        |
 | ------------------------------------------------------------------ | ------------------ |
